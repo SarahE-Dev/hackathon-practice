@@ -203,6 +203,90 @@ Work through the remaining issues (2-5) following the same flow:
 5. Review your own PR
 6. Merge and clean up
 
+## 8. Setting Up Your Hackathon Team Repo
+
+On hackathon day, one person should create the repo and everyone else joins. Here's the playbook.
+
+### Create the repo and add collaborators
+
+```bash
+# One person creates it
+gh repo create your-hackathon-project --public --clone
+cd your-hackathon-project
+
+# Add teammates (they'll get an email invite)
+gh api repos/{owner}/{repo}/collaborators/{username} -X PUT
+```
+
+Or do it from GitHub: **Settings** > **Collaborators** > **Add people**.
+
+### Set up branch protection on main
+
+This prevents anyone from pushing directly to `main` — all changes go through PRs.
+
+1. Go to **Settings** > **Branches** > **Add branch protection rule**
+2. Branch name pattern: `main`
+3. Enable:
+   - **Require a pull request before merging**
+   - **Require approvals** (set to 1)
+4. Save changes
+
+Now every change needs at least one teammate's review before merging.
+
+### Agree on conventions
+
+Align on these before you start coding:
+
+| Topic | Convention |
+|-------|-----------|
+| Branches | `feature/short-name`, `fix/short-name`, `refactor/short-name` |
+| Commits | Start with `feat:`, `fix:`, `refactor:`, `docs:` |
+| PRs | Use the PR template, always link an issue with `Closes #N` |
+| Reviews | At least one approval before merging |
+| Merging | Squash merge to keep `main` history clean |
+
+### Handle merge conflicts
+
+With multiple people working at once, conflicts will happen. Here's the workflow:
+
+```bash
+# You're on your feature branch and main has moved ahead
+git checkout main
+git pull
+
+# Go back to your branch and rebase onto latest main
+git checkout feature/your-feature
+git rebase main
+
+# If there are conflicts, git will pause and show you which files
+# Open the conflicting files, look for the markers:
+#   <<<<<<< HEAD
+#   (your changes)
+#   =======
+#   (their changes)
+#   >>>>>>> main
+# Edit the file to keep what you want, remove the markers
+
+# After fixing each conflicting file:
+git add <fixed-file>
+git rebase --continue
+
+# Once done, force push your branch (safe since it's your feature branch)
+git push --force-with-lease
+```
+
+**Tip:** Keep branches small and short-lived. The longer a branch lives, the more likely it conflicts.
+
+### Hackathon day checklist
+
+- [ ] One person creates the repo
+- [ ] Add all teammates as collaborators
+- [ ] Turn on branch protection for `main`
+- [ ] Everyone clones the repo
+- [ ] Create a Project Board with To Do / In Progress / Done
+- [ ] Write out your initial issues and assign them
+- [ ] Start building!
+
 ## Quick Reference
 
 | Action | Command |
