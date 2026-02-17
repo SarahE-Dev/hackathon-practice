@@ -47,6 +47,9 @@ git push -u origin main
 2. Click **Projects** tab > **New project**
 3. Choose **Board** view
 4. Create three columns: **To Do**, **In Progress**, **Done**
+5. Add teammates: **Settings** (⚙️) > **Manage access** > add your teammates
+
+> **Note:** Repo collaborators don't automatically get Project access. You need to add them separately in the Project's settings, otherwise they won't be able to move cards or manage the board.
 
 ## 3. Create Issues
 
@@ -310,6 +313,7 @@ git push --force-with-lease
 - [ ] Turn on branch protection for `main`
 - [ ] Everyone clones the repo
 - [ ] Create a Project Board with To Do / In Progress / Done
+- [ ] Add teammates to the Project (Settings > Manage access)
 - [ ] Write out your initial issues and assign them
 - [ ] Start building!
 
