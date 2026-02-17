@@ -2,6 +2,32 @@
 
 Work through these exercises before the hackathon to get comfortable with the full GitHub workflow.
 
+## Prerequisites
+
+### Git
+
+You probably have this already. Check with `git --version`. If not:
+
+- **Mac:** `xcode-select --install` (or `brew install git`)
+- **Windows:** [git-scm.com/downloads](https://git-scm.com/downloads)
+- **Linux:** `sudo apt install git` (Debian/Ubuntu) or `sudo dnf install git` (Fedora)
+
+### GitHub CLI (`gh`)
+
+Many commands in this guide use `gh`. Check with `gh --version`. To install:
+
+- **Mac:** `brew install gh`
+- **Windows:** `winget install GitHub.cli`
+- **Linux:** See [cli.github.com/manual/installation](https://cli.github.com/manual/installation)
+
+Then authenticate:
+
+```bash
+gh auth login
+```
+
+Follow the prompts to log in via browser. You can skip `gh` and do everything through the GitHub web UI instead, but the CLI is faster.
+
 ## 1. Push this repo to GitHub
 
 ```bash
