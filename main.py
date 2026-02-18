@@ -2,7 +2,7 @@
 
 import os
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -16,6 +16,40 @@ if not GROQ_API_KEY:
     raise RuntimeError("Missing GROQ_API_KEY. Set it in your .env file.")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+async def call_groq(messages, model: str, temperature: float = 0.7) -> str:
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="Server misconfigured: missing GROQ_API_KEY")
+
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(GROQ_URL, json=payload, headers=headers, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Groq request timed out")
+    except httpx.HTTPStatusError as e:
+        # Avoid dumping secrets; include a small hint only
+        raise HTTPException(status_code=502, detail=f"Groq API error: {e.response.status_code}")
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Network error contacting Groq")
+    except ValueError:
+        raise HTTPException(status_code=502, detail="Invalid JSON from Groq")
+
+    try:
+        return data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        raise HTTPException(status_code=502, detail="Unexpected response shape from Groq")
 
 
 class ChatRequest(BaseModel):
@@ -35,45 +69,24 @@ def health():
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    # ANTI-PATTERN: copy-pasted API call logic (duplicated in /summarize)
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "model": req.model,
-        "messages": [{"role": "user", "content": req.message}],
-        "temperature": 0.7,
-    }
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(GROQ_URL, json=payload, headers=headers, timeout=30)
-        data = resp.json()
-    return {
-        "reply": data["choices"][0]["message"]["content"],
-        "model": req.model,
-    }
-
+    # FIX: ANTI-PATTERN: copy-pasted API call logic (duplicated in /summarize)
+    reply = await call_groq(
+        messages=[{"role": "user", "content": req.message}],
+        model=req.model,
+    )
+    return {"reply": reply, "model": req.model}
+ 
 
 @app.post("/summarize")
 async def summarize(req: SummarizeRequest):
-    # ANTI-PATTERN: copy-pasted API call logic (same as /chat)
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json",
-    }
+    # FIX: ANTI-PATTERN: copy-pasted API call logic (same as /chat)
     prompt = f"Summarize the following text in 2-3 sentences:\n\n{req.text}"
-    payload = {
-        "model": req.model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7,
-    }
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(GROQ_URL, json=payload, headers=headers, timeout=30)
-        data = resp.json()
-    # BUG: wrong key - uses 'reply' but should return same structure or
-    # crashes when Groq returns an error (no error handling)
+    summary = await call_groq(
+        messages=[{"role": "user", "content": prompt}],
+        model=req.model,
+    )
     return {
-        "summary": data["choices"][0]["message"]["content"],
+        "summary": summary,
         "model": req.model,
         "original_length": len(req.text),
     }
