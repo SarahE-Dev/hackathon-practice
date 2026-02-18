@@ -10,8 +10,10 @@ load_dotenv()
 
 app = FastAPI(title="Groq Chat")
 
-# BUG: hardcoded API key (should use env var)
-GROQ_API_KEY = "gsk_abc123_fake_key_replace_me"
+# FIX: hardcoded API key (should use env var)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise RuntimeError("Missing GROQ_API_KEY. Set it in your .env file.")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
